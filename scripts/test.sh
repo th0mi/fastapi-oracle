@@ -5,10 +5,7 @@ $HOME/.local/bin/poetry run pytest \
   -m pureunit \
   --cov=. \
   --cov-fail-under=100 \
-  --cov-report=xml \
-  --junitxml=report.xml \
+  --cov-report=term-missing \
   tests
-$HOME/.local/bin/poetry run coverage xml
-xmllint -o report.xml --format report.xml
 
 set +e
