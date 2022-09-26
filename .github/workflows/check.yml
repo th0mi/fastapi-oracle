@@ -15,6 +15,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
+      - name: Apt install
+        run: ./scripts/aptinstall.sh
       - name: Cache Poetry
         uses: actions/cache@v3
         id: cache-poetry
@@ -36,6 +38,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
+      - name: Apt install
+        run: ./scripts/aptinstall.sh
       - name: Cache Poetry
         uses: actions/cache@v3
         id: cache-poetry
@@ -45,6 +49,6 @@ jobs:
           restore-keys: |
             poetry-$
       - name: Install Poetry
-        run: POETRY_VIRTUALENVS_IN_PROJECT=1 ./scripts/poetryinstall.sh                 
+        run: POETRY_VIRTUALENVS_IN_PROJECT=1 ./scripts/poetryinstall.sh
       - name: Check style and typing
         run: ./scripts/verify.sh
