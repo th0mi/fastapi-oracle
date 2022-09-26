@@ -19,7 +19,7 @@ Helpers for using the [`cx_Oracle_async`](https://github.com/GoodManWEN/cx_Oracl
    DB_USER=foouser
    DB_PASSWORD=foopass
    DB_SERVICE_NAME=foodb1.aintitfootastic.com
-5. Use the utils:
+6. Use the utils:
    ```python
    from typing import Any
 
