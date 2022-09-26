@@ -17,6 +17,14 @@ jobs:
           python-version: '3.10'
       - name: Install Poetry
         run: POETRY_VIRTUALENVS_IN_PROJECT=1 ./scripts/poetryinstall.sh
+      - name: Cache Poetry
+        uses: actions/cache@v3
+        id: cache-poetry
+        with:
+          path: .venv
+          key: poetry-$
+          restore-keys: |
+            poetry-$
       - name: Run tests
         run: ./scripts/test.sh
   lint-and-types:
@@ -29,6 +37,14 @@ jobs:
         with:
           python-version: '3.10'
       - name: Install Poetry
-        run: POETRY_VIRTUALENVS_IN_PROJECT=1 ./scripts/poetryinstall.sh
+        run: POETRY_VIRTUALENVS_IN_PROJECT=1 ./scripts/poetryinstall.sh                 
+      - name: Cache Poetry                                                              
+        uses: actions/cache@v3                                                          
+        id: cache-poetry                                                                
+        with:                                                                           
+          path: .venv                                                                   
+          key: poetry-$                                                                 
+          restore-keys: |                                                               
+            poetry-$
       - name: Check style and typing
         run: ./scripts/verify.sh
