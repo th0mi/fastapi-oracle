@@ -54,6 +54,7 @@ colorama = {version = ">=0.3.9", markers = "platform_system == \"Windows\""}
 GitPython = ">=1.0.1"
 PyYAML = ">=5.3.1"
 stevedore = ">=1.20.0"
+toml = {version = "*", optional = true, markers = "extra == \"toml\""}
 
 [package.extras]
 test = ["beautifulsoup4 (>=4.8.0)", "coverage (>=4.5.4)", "fixtures (>=3.0.0)", "flake8 (>=4.0.0)", "pylint (==1.9.4)", "stestr (>=2.5.0)", "testscenarios (>=0.5.0)", "testtools (>=2.3.0)", "toml"]
@@ -494,6 +495,14 @@ optional = false
 python-versions = ">=3.5"
 
 [[package]]
+name = "toml"
+version = "0.10.2"
+description = "Python Library for Tom's Obvious, Minimal Language"
+category = "dev"
+optional = false
+python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
+
+[[package]]
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
@@ -525,7 +534,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.10,<4"
-content-hash = "5cdddf6bd47dcef1f784d7c55c8197dc668f815405592a10c082e9b0245ad00e"
+content-hash = "1bde6f5684662dc30fd3ab43e2f788a63b9945cac7b76d0be2c1c78eb486ebe4"
 
 [metadata.files]
 anyio = [
@@ -871,6 +880,10 @@ stevedore = [
 ThreadPoolExecutorPlus = [
     {file = "ThreadPoolExecutorPlus-0.2.2-py3-none-any.whl", hash = "sha256:bd5fada94b5563ccea24b2758c9a0629820f0a40815ad03f268794c63ff5e72f"},
     {file = "ThreadPoolExecutorPlus-0.2.2.tar.gz", hash = "sha256:aa958057f9ca72892f217c8a3af2b28d3a38d97510ece4189fe82f06ed0c7312"},
+]
+toml = [
+    {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
+    {file = "toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f"},
 ]
 tomli = [
     {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
