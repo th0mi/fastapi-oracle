@@ -75,13 +75,19 @@ def test_coll_records_as_dicts():
     assert dicts[1]["mi"] == 333
 
 
-@pytest.mark.pureunit
-def test_result_keys_to_lower():
-    result = [
+async def result_keys_to_lower_test_gen():
+    for row in [
         {"DO": 111, "RE": 222, "MI": 333},
         {"DO": 444, "RE": 555, "MI": 666},
-    ]
-    assert [x for x in result_keys_to_lower(result)] == [
+    ]:
+        yield row
+
+
+@pytest.mark.asyncio
+@pytest.mark.pureunit
+async def test_result_keys_to_lower():
+    result = result_keys_to_lower_test_gen()
+    assert [x async for x in result_keys_to_lower(result)] == [
         {"do": 111, "re": 222, "mi": 333},
         {"do": 444, "re": 555, "mi": 666},
     ]

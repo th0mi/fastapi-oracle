@@ -1,4 +1,4 @@
-from collections.abc import Iterable, Mapping
+from collections.abc import AsyncIterable, Mapping
 from typing import Any, AsyncGenerator, Generator
 
 from cx_Oracle import Object, ObjectType
@@ -46,8 +46,9 @@ def row_keys_to_lower(row: Mapping[str, Any]) -> dict[str, Any]:
     return {k.lower(): v for k, v in row.items()}
 
 
-def result_keys_to_lower(
-    result: Iterable[Mapping[str, Any]]
-) -> Generator[dict[str, Any], None, None]:
+async def result_keys_to_lower(
+    result: AsyncIterable[Mapping[str, Any]]
+) -> AsyncGenerator[dict[str, Any], None]:
     """Make the keys lowercase for each row in the specified results."""
-    return (row_keys_to_lower(row) for row in result)
+    async for row in result:
+        yield row_keys_to_lower(row)
