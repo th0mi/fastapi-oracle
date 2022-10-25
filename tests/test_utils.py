@@ -5,6 +5,7 @@ import pytest
 from fastapi_oracle.utils import (
     coll_records_as_dicts,
     cursor_rows_as_dicts,
+    cursor_rows_as_gen,
     result_keys_to_lower,
 )
 
@@ -16,6 +17,33 @@ def test_cursor_rows_as_dicts():
     cursor_rows_as_dicts(cursor)
     row_as_dict = cursor._cursor.rowfactory(111, 222, 333)
     assert row_as_dict == {"do": 111, "re": 222, "mi": 333}
+
+
+@pytest.mark.pureunit
+def test_cursor_rows_as_gen():
+    things_to_fetch = [42, 43, 44, None]
+    cursor = MagicMock()
+    cursor.fetchone.side_effect = things_to_fetch
+    result = [row for row in cursor_rows_as_gen(cursor)]
+    assert result == things_to_fetch[:-1]
+
+
+@pytest.mark.pureunit
+def test_cursor_rows_as_gen_no_rows():
+    cursor = MagicMock()
+    cursor.fetchone.side_effect = [None]
+    result = [row for row in cursor_rows_as_gen(cursor)]
+    assert result == []
+
+
+@pytest.mark.pureunit
+def test_cursor_rows_as_gen_more_than_max_rows():
+    things_to_fetch = [42, 43, 44, None]
+    max_rows = 2
+    cursor = MagicMock()
+    cursor.fetchone.side_effect = things_to_fetch
+    result = [row for row in cursor_rows_as_gen(cursor, max_rows=max_rows)]
+    assert result == things_to_fetch[:max_rows]
 
 
 @pytest.mark.pureunit

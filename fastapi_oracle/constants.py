@@ -21,3 +21,6 @@ class DbPoolKey(NamedTuple):
     db_port: int
     db_user: str
     db_service_name: str
+
+
+DEFAULT_MAX_ROWS = 1000

@@ -4,6 +4,8 @@ from typing import Any, Generator
 from cx_Oracle import Object, ObjectType
 from cx_Oracle_async.cursors import AsyncCursorWrapper
 
+from fastapi_oracle.constants import DEFAULT_MAX_ROWS
+
 
 def cursor_rows_as_dicts(cursor: AsyncCursorWrapper):
     """Make the specified cursor return its rows as dicts instead of tuples.
@@ -14,6 +16,17 @@ def cursor_rows_as_dicts(cursor: AsyncCursorWrapper):
     """
     columns = [col[0] for col in cursor._cursor.description]
     cursor._cursor.rowfactory = lambda *args: dict(zip(columns, args))
+
+
+def cursor_rows_as_gen(
+    cursor: AsyncCursorWrapper, max_rows: int = DEFAULT_MAX_ROWS
+) -> Generator[Any, None, None]:
+    """Loop through the specified cursor's results in a generator."""
+    i = 0
+
+    while (row := cursor.fetchone()) is not None and i < max_rows:
+        yield row
+        i += 1
 
 
 def coll_records_as_dicts(
