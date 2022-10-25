@@ -21,13 +21,15 @@ Helpers for using the [`cx_Oracle_async`](https://github.com/GoodManWEN/cx_Oracl
    DB_SERVICE_NAME=foodb1.aintitfootastic.com
 6. Use the utils:
    ```python
-   from typing import Any
+   from collections.abc import AsyncIterable, Mapping
+   from typing import Any, AsyncGenerator
 
    from fastapi import APIRouter, Depends, FastAPI
    from fastapi_oracle import (
        DbPoolConnAndCursor,
        close_db_pools,
        cursor_rows_as_dicts,
+       cursor_rows_as_gen,
        get_db_cursor,
        result_keys_to_lower,
    )
@@ -42,22 +44,32 @@ Helpers for using the [`cx_Oracle_async`](https://github.com/GoodManWEN/cx_Oracl
        name: str
 
 
-   def map_list_foos_result_to_foos(result: list[dict[str, Any]]) -> list[Foo]:
+   async def map_list_foos_result_to_foos(
+       result: AsyncIterable[Mapping[str, Any]]
+   ) -> AsyncGenerator[Foo, None]:
        """Map a list foos DB result to a list of foos."""
-       return [Foo(**row) for row in result_keys_to_lower(result)]
+       async for row in result:
+           yield Foo(**row)
 
 
-   async def list_foos_query(db: DbPoolConnAndCursor) -> list[dict[str, Any]]:
+   async def list_foos_query(
+       db: DbPoolConnAndCursor
+   ) -> AsyncGenerator[dict[str, Any], None]:
        """List all foos."""
        await db.cursor.execute("SELECT id, name FROM foo")
        cursor_rows_as_dicts(db.cursor)
-       return await db.cursor.fetchall()
+       return (
+           row2
+           async for row2 in result_keys_to_lower(
+               row1 async for row1 in cursor_rows_as_gen(db.cursor)
+           )
+       )
 
 
    @router.get("/", response_model=list[Foo])
    async def list_foos(db: DbPoolConnAndCursor = Depends(get_db_cursor)):
        result = await list_foos_query(db)
-       foos = map_list_foos_result_to_foos(result)
+       foos = [x async for x in map_list_foos_result_to_foos(result)]
        return foos
 
 

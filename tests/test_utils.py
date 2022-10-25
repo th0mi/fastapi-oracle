@@ -91,3 +91,25 @@ async def test_result_keys_to_lower():
         {"do": 111, "re": 222, "mi": 333},
         {"do": 444, "re": 555, "mi": 666},
     ]
+
+
+@pytest.mark.asyncio
+@pytest.mark.pureunit
+async def test_cursor_rows_as_gen_and_result_keys_to_lower():
+    things_to_fetch = [
+        {"DO": 111, "RE": 222, "MI": 333},
+        {"DO": 444, "RE": 555, "MI": 666},
+        None,
+    ]
+    cursor = AsyncMock()
+    cursor.fetchone.side_effect = things_to_fetch
+    result = (
+        row2
+        async for row2 in result_keys_to_lower(
+            row1 async for row1 in cursor_rows_as_gen(cursor)
+        )
+    )
+    assert [x async for x in result] == [
+        {"do": 111, "re": 222, "mi": 333},
+        {"do": 444, "re": 555, "mi": 666},
+    ]
