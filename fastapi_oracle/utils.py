@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping
 from typing import Any, Generator
 
 from cx_Oracle import Object, ObjectType
@@ -34,7 +34,7 @@ def row_keys_to_lower(row: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def result_keys_to_lower(
-    result: Sequence[Mapping[str, Any]]
+    result: Iterable[Mapping[str, Any]]
 ) -> Generator[dict[str, Any], None, None]:
     """Make the keys lowercase for each row in the specified results."""
     return (row_keys_to_lower(row) for row in result)
