@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Mapping
-from typing import Any, Generator
+from typing import Any, AsyncGenerator, Generator
 
 from cx_Oracle import Object, ObjectType
 from cx_Oracle_async.cursors import AsyncCursorWrapper
@@ -18,13 +18,13 @@ def cursor_rows_as_dicts(cursor: AsyncCursorWrapper):
     cursor._cursor.rowfactory = lambda *args: dict(zip(columns, args))
 
 
-def cursor_rows_as_gen(
+async def cursor_rows_as_gen(
     cursor: AsyncCursorWrapper, max_rows: int = DEFAULT_MAX_ROWS
-) -> Generator[Any, None, None]:
+) -> AsyncGenerator[Any, None]:
     """Loop through the specified cursor's results in a generator."""
     i = 0
 
-    while (row := cursor.fetchone()) is not None and i < max_rows:
+    while (row := await cursor.fetchone()) is not None and i < max_rows:
         yield row
         i += 1
 

@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -19,30 +19,33 @@ def test_cursor_rows_as_dicts():
     assert row_as_dict == {"do": 111, "re": 222, "mi": 333}
 
 
+@pytest.mark.asyncio
 @pytest.mark.pureunit
-def test_cursor_rows_as_gen():
+async def test_cursor_rows_as_gen():
     things_to_fetch = [42, 43, 44, None]
-    cursor = MagicMock()
+    cursor = AsyncMock()
     cursor.fetchone.side_effect = things_to_fetch
-    result = [row for row in cursor_rows_as_gen(cursor)]
+    result = [row async for row in cursor_rows_as_gen(cursor)]
     assert result == things_to_fetch[:-1]
 
 
+@pytest.mark.asyncio
 @pytest.mark.pureunit
-def test_cursor_rows_as_gen_no_rows():
-    cursor = MagicMock()
+async def test_cursor_rows_as_gen_no_rows():
+    cursor = AsyncMock()
     cursor.fetchone.side_effect = [None]
-    result = [row for row in cursor_rows_as_gen(cursor)]
+    result = [row async for row in cursor_rows_as_gen(cursor)]
     assert result == []
 
 
+@pytest.mark.asyncio
 @pytest.mark.pureunit
-def test_cursor_rows_as_gen_more_than_max_rows():
+async def test_cursor_rows_as_gen_more_than_max_rows():
     things_to_fetch = [42, 43, 44, None]
     max_rows = 2
-    cursor = MagicMock()
+    cursor = AsyncMock()
     cursor.fetchone.side_effect = things_to_fetch
-    result = [row for row in cursor_rows_as_gen(cursor, max_rows=max_rows)]
+    result = [row async for row in cursor_rows_as_gen(cursor, max_rows=max_rows)]
     assert result == things_to_fetch[:max_rows]
 
 
