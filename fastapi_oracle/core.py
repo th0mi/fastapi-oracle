@@ -1,3 +1,4 @@
+import asyncio
 import time
 from typing import AsyncGenerator
 
@@ -15,16 +16,10 @@ from fastapi_oracle.constants import (
 )
 
 
-async def get_db_pool(
-    settings: Settings = Depends(get_settings),
-) -> AsyncPoolWrapper:  # pragma: no cover
-    """Get the DB connection pool.
+DB_POOL_LOCK = asyncio.Lock()
 
-    Creates a new singleton connection pool if one doesn't yet exist, otherwise returns
-    the existing singleton connection pool.
 
-    Suitable for use as a FastAPI path operation with depends().
-    """
+async def _get_db_pool(settings: Settings) -> AsyncPoolWrapper:  # pragma: no cover
     pool_key = DbPoolKey(
         settings.db_host, settings.db_port, settings.db_user, settings.db_service_name
     )
@@ -49,6 +44,20 @@ async def get_db_pool(
         pool=pool, created_time=time.monotonic()
     )
     return pools.DB_POOLS[pool_key].pool
+
+
+async def get_db_pool(
+    settings: Settings = Depends(get_settings),
+) -> AsyncPoolWrapper:  # pragma: no cover
+    """Get the DB connection pool.
+
+    Creates a new singleton connection pool if one doesn't yet exist, otherwise returns
+    the existing singleton connection pool.
+
+    Suitable for use as a FastAPI path operation with depends().
+    """
+    async with DB_POOL_LOCK:
+        return await _get_db_pool(settings)
 
 
 async def get_db_conn(
