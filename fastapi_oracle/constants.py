@@ -23,4 +23,9 @@ class DbPoolKey(NamedTuple):
     db_service_name: str
 
 
+class DbPoolAndCreatedTime(NamedTuple):
+    pool: AsyncPoolWrapper
+    created_time: float
+
+
 DEFAULT_MAX_ROWS = 1000

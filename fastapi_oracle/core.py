@@ -1,3 +1,4 @@
+import time
 from typing import AsyncGenerator
 
 from cx_Oracle_async import create_pool
@@ -6,7 +7,12 @@ from fastapi import Depends
 
 from fastapi_oracle import pools
 from fastapi_oracle.config import Settings, get_settings
-from fastapi_oracle.constants import DbPoolAndConn, DbPoolConnAndCursor, DbPoolKey
+from fastapi_oracle.constants import (
+    DbPoolAndConn,
+    DbPoolAndCreatedTime,
+    DbPoolConnAndCursor,
+    DbPoolKey,
+)
 
 
 async def get_db_pool(
@@ -23,16 +29,26 @@ async def get_db_pool(
         settings.db_host, settings.db_port, settings.db_user, settings.db_service_name
     )
     if pools.DB_POOLS.get(pool_key) is not None:
-        return pools.DB_POOLS[pool_key]
+        pool, created_time = pools.DB_POOLS[pool_key]
+        if (
+            settings.db_conn_ttl is None
+            or time.monotonic() - created_time < settings.db_conn_ttl
+        ):
+            return pool
 
-    pools.DB_POOLS[pool_key] = await create_pool(
+        await pool.close()
+
+    pool = await create_pool(
         host=settings.db_host,
         port=f"{settings.db_port}",
         user=settings.db_user,
         password=settings.db_password,
         service_name=settings.db_service_name,
     )
-    return pools.DB_POOLS[pool_key]
+    pools.DB_POOLS[pool_key] = DbPoolAndCreatedTime(
+        pool=pool, created_time=time.monotonic()
+    )
+    return pools.DB_POOLS[pool_key].pool
 
 
 async def get_db_conn(
@@ -67,7 +83,7 @@ async def close_db_pools():  # pragma: no cover
     This shouldn't need to be called manually in most cases, it's registered as a
     FastAPI shutdown function, so it will get called when the Python process ends.
     """
-    for pool in pools.DB_POOLS.values():
+    for pool, _ in pools.DB_POOLS.values():
         await pool.close()
 
     pools.DB_POOLS = {}
