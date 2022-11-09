@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterable, Mapping
 from typing import Any, AsyncGenerator, Generator
 
-from cx_Oracle import Object, ObjectType
+from cx_Oracle import Object
 from cx_Oracle_async.cursors import AsyncCursorWrapper
 
 from fastapi_oracle.constants import DEFAULT_MAX_ROWS
@@ -29,14 +29,12 @@ async def cursor_rows_as_gen(
         i += 1
 
 
-def coll_records_as_dicts(
-    coll: Object, coll_type: ObjectType
-) -> Generator[dict[str, Any], None, None]:
+def coll_records_as_dicts(coll: Object) -> Generator[dict[str, Any], None, None]:
     """Make the specified collection of records into simple dicts."""
     for record in coll.aslist():
         item = {
             type_attr.name: getattr(record, type_attr.name, None)
-            for type_attr in coll_type.element_type.attributes
+            for type_attr in coll.type.element_type.attributes
         }
         yield item
 

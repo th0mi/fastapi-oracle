@@ -56,8 +56,6 @@ def test_coll_records_as_dicts():
     record2 = MagicMock()
     record2.re = 222
     record2.mi = 333
-    coll = MagicMock()
-    coll.aslist.return_value = [record1, record2]
 
     type_attr1 = MagicMock()
     type_attr1.name = "do"
@@ -65,10 +63,12 @@ def test_coll_records_as_dicts():
     type_attr2.name = "re"
     type_attr3 = MagicMock()
     type_attr3.name = "mi"
-    coll_type = MagicMock()
-    coll_type.element_type.attributes = [type_attr1, type_attr2, type_attr3]
 
-    dicts = [x for x in coll_records_as_dicts(coll, coll_type)]
+    coll = MagicMock()
+    coll.aslist.return_value = [record1, record2]
+    coll.type.element_type.attributes = [type_attr1, type_attr2, type_attr3]
+
+    dicts = [x for x in coll_records_as_dicts(coll)]
 
     assert dicts[0]["do"] == 111
     assert dicts[1]["re"] == 222
