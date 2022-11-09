@@ -20,7 +20,7 @@ from fastapi_oracle.constants import (
 DB_POOL_LOCK = asyncio.Lock()
 
 
-async def _get_db_pool(
+async def get_or_create_db_pool(
     settings: Settings, force_recreate_pool: bool = False
 ) -> AsyncPoolWrapper:  # pragma: no cover
     async with DB_POOL_LOCK:
@@ -72,7 +72,7 @@ async def get_db_pool(
 
     Suitable for use as a FastAPI path operation with depends().
     """
-    return await _get_db_pool(settings)
+    return await get_or_create_db_pool(settings)
 
 
 async def get_db_conn(
