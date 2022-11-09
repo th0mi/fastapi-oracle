@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fastapi-oracle"
-version = "0.2.1"
+version = "0.2.2"
 description = "Helpers for using the cx_Oracle_async library with the FastAPI framework."
 authors = ["Jeremy Epstein <jazepstein@gmail.com>"]
 homepage = "https://github.com/Jaza/fastapi-oracle"
@@ -13,6 +13,7 @@ python = ">=3.10,<4"
 fastapi = "*"
 pydantic = {extras = ["dotenv"], version = "*"}
 cx-Oracle-async = "*"
+loguru = "*"
 
 
 [tool.poetry.group.dev.dependencies]

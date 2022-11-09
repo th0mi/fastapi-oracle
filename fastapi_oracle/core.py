@@ -5,6 +5,7 @@ from typing import AsyncGenerator
 from cx_Oracle_async import create_pool
 from cx_Oracle_async.pools import AsyncPoolWrapper
 from fastapi import Depends
+from loguru import logger
 
 from fastapi_oracle import pools
 from fastapi_oracle.config import Settings, get_settings
@@ -19,31 +20,46 @@ from fastapi_oracle.constants import (
 DB_POOL_LOCK = asyncio.Lock()
 
 
-async def _get_db_pool(settings: Settings) -> AsyncPoolWrapper:  # pragma: no cover
-    pool_key = DbPoolKey(
-        settings.db_host, settings.db_port, settings.db_user, settings.db_service_name
-    )
-    if pools.DB_POOLS.get(pool_key) is not None:
-        pool, created_time = pools.DB_POOLS[pool_key]
-        if (
-            settings.db_conn_ttl is None
-            or time.monotonic() - created_time < settings.db_conn_ttl
-        ):
-            return pool
+async def _get_db_pool(
+    settings: Settings, force_recreate_pool: bool = False
+) -> AsyncPoolWrapper:  # pragma: no cover
+    async with DB_POOL_LOCK:
+        pool_key = DbPoolKey(
+            settings.db_host,
+            settings.db_port,
+            settings.db_user,
+            settings.db_service_name,
+        )
+        if pools.DB_POOLS.get(pool_key) is not None:
+            ttl = settings.db_conn_ttl
+            pool, created_time = pools.DB_POOLS[pool_key]
 
-        await pool.close()
+            if ttl is not None and time.monotonic() - created_time >= ttl:
+                logger.info(
+                    "Closing the existing database connection pool because it is older "
+                    f"than {ttl} seconds"
+                )
+                await pool.close()
+            elif force_recreate_pool:
+                logger.info(
+                    "Closing the existing database connection pool because "
+                    "force_recreate_pool=True"
+                )
+                await pool.close()
+            else:
+                return pool
 
-    pool = await create_pool(
-        host=settings.db_host,
-        port=f"{settings.db_port}",
-        user=settings.db_user,
-        password=settings.db_password,
-        service_name=settings.db_service_name,
-    )
-    pools.DB_POOLS[pool_key] = DbPoolAndCreatedTime(
-        pool=pool, created_time=time.monotonic()
-    )
-    return pools.DB_POOLS[pool_key].pool
+        pool = await create_pool(
+            host=settings.db_host,
+            port=f"{settings.db_port}",
+            user=settings.db_user,
+            password=settings.db_password,
+            service_name=settings.db_service_name,
+        )
+        pools.DB_POOLS[pool_key] = DbPoolAndCreatedTime(
+            pool=pool, created_time=time.monotonic()
+        )
+        return pools.DB_POOLS[pool_key].pool
 
 
 async def get_db_pool(
@@ -56,8 +72,7 @@ async def get_db_pool(
 
     Suitable for use as a FastAPI path operation with depends().
     """
-    async with DB_POOL_LOCK:
-        return await _get_db_pool(settings)
+    return await _get_db_pool(settings)
 
 
 async def get_db_conn(
