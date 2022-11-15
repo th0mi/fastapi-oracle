@@ -96,7 +96,9 @@ async def get_db_cursor(
         yield DbPoolConnAndCursor(pool=pool, conn=conn, cursor=cursor)
 
 
-async def close_db_pools():  # pragma: no cover
+async def close_db_pools(
+    force: bool = False, interrupt: bool = False
+):  # pragma: no cover
     """Close the DB connection pools.
 
     This shouldn't need to be called manually in most cases, it's registered as a
@@ -104,6 +106,6 @@ async def close_db_pools():  # pragma: no cover
     """
     async with DB_POOL_LOCK:
         for pool, _ in pools.DB_POOLS.values():
-            await pool.close()
+            await pool.close(force=force, interrupt=interrupt)
 
         pools.DB_POOLS = {}
