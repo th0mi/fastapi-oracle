@@ -2,6 +2,7 @@ import asyncio
 import time
 from typing import AsyncGenerator
 
+from cx_Oracle import DatabaseError
 from cx_Oracle_async import create_pool
 from cx_Oracle_async.pools import AsyncPoolWrapper
 from fastapi import Depends
@@ -77,8 +78,20 @@ async def get_db_conn(
 
     Suitable for use as a FastAPI path operation with depends().
     """
-    async with pool.acquire() as conn:
-        yield DbPoolAndConn(pool=pool, conn=conn)
+    try:
+        async with pool.acquire() as conn:
+            yield DbPoolAndConn(pool=pool, conn=conn)
+    except DatabaseError as ex:
+        if "not connected" in f"{ex}":
+            logger.warning(
+                '"not connected" was raised, either when acquiring or when releasing '
+                "the database connection pool - this can happen on release when the "
+                "pool has already been force closed - assuming that that's what "
+                "happened in this case, therefore suppressing this error, so that "
+                "consuming code can continue gracefully"
+            )
+        else:
+            raise ex
 
 
 async def get_db_cursor(
