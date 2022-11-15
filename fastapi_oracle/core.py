@@ -21,7 +21,7 @@ DB_POOL_LOCK = asyncio.Lock()
 
 
 async def get_or_create_db_pool(
-    settings: Settings, force_recreate_pool: bool = False
+    settings: Settings,
 ) -> AsyncPoolWrapper:  # pragma: no cover
     async with DB_POOL_LOCK:
         pool_key = DbPoolKey(
@@ -30,6 +30,7 @@ async def get_or_create_db_pool(
             settings.db_user,
             settings.db_service_name,
         )
+
         if pools.DB_POOLS.get(pool_key) is not None:
             ttl = settings.db_conn_ttl
             pool, created_time = pools.DB_POOLS[pool_key]
@@ -38,12 +39,6 @@ async def get_or_create_db_pool(
                 logger.info(
                     "Closing the existing database connection pool because it is older "
                     f"than {ttl} seconds"
-                )
-                await pool.close()
-            elif force_recreate_pool:
-                logger.info(
-                    "Closing the existing database connection pool because "
-                    "force_recreate_pool=True"
                 )
                 await pool.close()
             else:
@@ -107,7 +102,8 @@ async def close_db_pools():  # pragma: no cover
     This shouldn't need to be called manually in most cases, it's registered as a
     FastAPI shutdown function, so it will get called when the Python process ends.
     """
-    for pool, _ in pools.DB_POOLS.values():
-        await pool.close()
+    async with DB_POOL_LOCK:
+        for pool, _ in pools.DB_POOLS.values():
+            await pool.close()
 
-    pools.DB_POOLS = {}
+        pools.DB_POOLS = {}
