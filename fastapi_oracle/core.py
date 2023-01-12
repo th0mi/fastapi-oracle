@@ -30,6 +30,14 @@ async def close_db_pool(pool: AsyncPoolWrapper):  # pragma: no cover
                 "suppressing this error, hopefully consuming code can then "
                 "continue gracefully"
             )
+        elif "invalid OCI handle" in f"{ex}":
+            logger.warning(
+                '"invalid OCI handle" was raised, when releasing the database '
+                "connection pool - this can happen when the pool has already been "
+                "closed - assuming that that's what happened in this case, therefore "
+                "suppressing this error, so that consuming code can continue "
+                "gracefully"
+            )
         elif "not connected" in f"{ex}":
             logger.warning(
                 '"not connected" was raised, when releasing the database '
