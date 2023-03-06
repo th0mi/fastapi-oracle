@@ -1,5 +1,7 @@
 import time
-from typing import AsyncGenerator
+from functools import wraps
+from re import Pattern
+from typing import AsyncGenerator, Awaitable, Callable, ParamSpec, TypeVar
 
 from cx_Oracle import DatabaseError
 from cx_Oracle_async import create_pool
@@ -10,11 +12,17 @@ from loguru import logger
 from fastapi_oracle import pools
 from fastapi_oracle.config import Settings, get_settings
 from fastapi_oracle.constants import (
+    CAMEL_TO_SNAKE_REGEX,
     DbPoolAndConn,
     DbPoolAndCreatedTime,
     DbPoolConnAndCursor,
     DbPoolKey,
 )
+from fastapi_oracle.errors import IntermittentDatabaseError
+
+
+P = ParamSpec("P")
+T = TypeVar("T")
 
 
 async def close_db_pool(pool: AsyncPoolWrapper):  # pragma: no cover
@@ -148,3 +156,58 @@ async def close_db_pools():  # pragma: no cover
         await close_db_pool(pool)
 
     pools.DB_POOLS = {}
+
+
+def handle_db_errors(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
+    """Decorator to handle errors raised or returned by an Oracle DB call.
+
+    Usage:
+
+    @handle_db_errors
+    async def _get_foos(db: DbPoolConnAndCursor) -> list[Foo]:
+        result = await list_foos_query(db)
+        return [x async for x in map_list_foos_result_to_foos(result)]
+    """
+
+    @wraps(func)
+    async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+        from fastapi_oracle.errors import (
+            INTERMITTENT_DATABASE_ERROR_CLASSES,
+            INTERMITTENT_DATABASE_ERROR_STRING_MAP,
+        )
+
+        try:
+            return await func(*args, **kwargs)
+        except tuple(INTERMITTENT_DATABASE_ERROR_CLASSES) as exc:
+            logger.warning(
+                "Database call returned an error_code indicating "
+                f"{CAMEL_TO_SNAKE_REGEX.sub('_', exc.__class__.__name__).lower()}, "
+                "will close database connection pool, the call will have to be retried "
+                "later"
+            )
+            await close_db_pools()
+            raise IntermittentDatabaseError(
+                "An intermittent database error occurred, please try this call again "
+                "soon"
+            )
+        except DatabaseError as exc:
+            exc_str = f"{exc}".lower()
+
+            for k, v in INTERMITTENT_DATABASE_ERROR_STRING_MAP.items():
+                if (isinstance(v, Pattern) and v.search(exc_str) is not None) or (
+                    isinstance(v, str) and v in exc_str
+                ):
+                    logger.warning(
+                        f"Database call threw an exception indicating {k}, will close "
+                        "database connection pool, the call will have to be retried "
+                        "later"
+                    )
+                    await close_db_pools()
+                    raise IntermittentDatabaseError(
+                        "An intermittent database error occurred, please try this call "
+                        "again soon"
+                    )
+
+            raise exc
+
+    return wrapper

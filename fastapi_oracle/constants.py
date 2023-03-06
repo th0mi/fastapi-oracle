@@ -1,3 +1,4 @@
+import re
 from typing import NamedTuple
 
 from cx_Oracle_async.connections import AsyncConnectionWrapper
@@ -29,3 +30,10 @@ class DbPoolAndCreatedTime(NamedTuple):
 
 
 DEFAULT_MAX_ROWS = 1000
+
+# Thanks to: https://stackoverflow.com/a/1176023/2066849
+CAMEL_TO_SNAKE_REGEX = re.compile(r"(?<!^)(?=[A-Z])")
+
+PACKAGE_STATE_INVALIDATED_REGEX = re.compile(
+    r'existing state of package body "[^"]+" has been invalidated'
+)
