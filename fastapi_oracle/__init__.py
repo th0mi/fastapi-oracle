@@ -14,6 +14,7 @@ from .core import (
     get_db_cursor,
     get_db_pool,
     get_or_create_db_pool,
+    handle_db_errors,
 )
 from .errors import (
     INTERMITTENT_DATABASE_ERROR_CLASSES,
@@ -53,6 +54,7 @@ __all__ = [
     "get_db_pool",
     "get_or_create_db_pool",
     "get_settings",
+    "handle_db_errors",
     "pools",
     "result_keys_to_lower",
     "row_keys_to_lower",
