@@ -36,6 +36,7 @@ Helpers for using the [`cx_Oracle_async`](https://github.com/GoodManWEN/cx_Oracl
        handle_db_errors,
        result_keys_to_lower,
    )
+   from loguru import logger
    from pydantic import BaseModel
 
 
@@ -63,7 +64,6 @@ Helpers for using the [`cx_Oracle_async`](https://github.com/GoodManWEN/cx_Oracl
        await cursor.execute("SELECT id, name FROM foo")
        cursor_rows_as_dicts(cursor)
        rows = (row async for row in cursor_rows_as_gen(cursor))
-
        async for row in result_keys_to_lower(rows):
            yield row
 
@@ -71,12 +71,15 @@ Helpers for using the [`cx_Oracle_async`](https://github.com/GoodManWEN/cx_Oracl
    @handle_db_errors
    async def _get_foos(db: DbPoolConnAndCursor) -> list[Foo]:
        result = list_foos_query(db)
-       return [x async for x in map_list_foos_result_to_foos(result)]
+       foos = [x async for x in map_list_foos_result_to_foos(result)]
+       return foos
 
 
    @router.get("/", response_model=list[Foo])
    async def read_foos(db: DbPoolConnAndCursor = Depends(get_db_cursor)):
-       return _get_foos(db)
+       foos = await _get_foos(db)
+       logger.info(f"Fetched {len(foos)} foos")
+       return foos
 
 
    async def intermittent_database_error_handler(
