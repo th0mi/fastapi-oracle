@@ -70,7 +70,7 @@ Helpers for using the [`cx_Oracle_async`](https://github.com/GoodManWEN/cx_Oracl
 
    @handle_db_errors
    async def _get_foos(db: DbPoolConnAndCursor) -> list[Foo]:
-       result = await list_foos_query(db)
+       result = list_foos_query(db)
        return [x async for x in map_list_foos_result_to_foos(result)]
 
 
