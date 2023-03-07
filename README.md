@@ -24,13 +24,16 @@ Helpers for using the [`cx_Oracle_async`](https://github.com/GoodManWEN/cx_Oracl
    from collections.abc import AsyncIterable, Mapping
    from typing import Any, AsyncGenerator
 
-   from fastapi import APIRouter, Depends, FastAPI
+   from fastapi import APIRouter, Depends, FastAPI, Request, status
+   from fastapi.responses import JSONResponse
    from fastapi_oracle import (
        DbPoolConnAndCursor,
+       IntermittentDatabaseError,
        close_db_pools,
        cursor_rows_as_dicts,
        cursor_rows_as_gen,
        get_db_cursor,
+       handle_db_errors,
        result_keys_to_lower,
    )
    from pydantic import BaseModel
@@ -56,26 +59,51 @@ Helpers for using the [`cx_Oracle_async`](https://github.com/GoodManWEN/cx_Oracl
        db: DbPoolConnAndCursor
    ) -> AsyncGenerator[dict[str, Any], None]:
        """List all foos."""
-       await db.cursor.execute("SELECT id, name FROM foo")
-       cursor_rows_as_dicts(db.cursor)
-       return (
-           row2
-           async for row2 in result_keys_to_lower(
-               row1 async for row1 in cursor_rows_as_gen(db.cursor)
-           )
-       )
+       cursor = await db.conn.cursor()
+       await cursor.execute("SELECT id, name FROM foo")
+       cursor_rows_as_dicts(cursor)
+       rows = (row async for row in cursor_rows_as_gen(cursor))
+
+       async for row in result_keys_to_lower(rows):
+           yield row
+
+
+   @handle_db_errors
+   async def _get_foos(db: DbPoolConnAndCursor) -> list[Foo]:
+       result = await list_foos_query(db)
+       return [x async for x in map_list_foos_result_to_foos(result)]
 
 
    @router.get("/", response_model=list[Foo])
-   async def list_foos(db: DbPoolConnAndCursor = Depends(get_db_cursor)):
-       result = await list_foos_query(db)
-       foos = [x async for x in map_list_foos_result_to_foos(result)]
-       return foos
+   async def read_foos(db: DbPoolConnAndCursor = Depends(get_db_cursor)):
+       return _get_foos(db)
+
+
+   async def intermittent_database_error_handler(
+       request: Request,
+       exc: IntermittentDatabaseError,
+   ) -> JSONResponse:
+       return JSONResponse(
+           status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+           content={
+               "detail": [
+                   {
+                       "msg": f"{exc}",
+                       "type": "intermittent_database_error",
+                   }
+               ],
+           },
+       )
 
 
    def get_app() -> FastAPI:
        """Create a FastAPI app instance."""
-       app = FastAPI(on_shutdown=[close_db_pools])
+       app = FastAPI(
+           on_shutdown=[close_db_pools],
+           exception_handlers={
+               IntermittentDatabaseError: intermittent_database_error_handler,
+           },
+       )
        app.include_router(router)
        return app
    ```
