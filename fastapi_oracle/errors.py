@@ -40,4 +40,7 @@ INTERMITTENT_DATABASE_ERROR_STRING_MAP: dict[str, str | Pattern] = {
     "no_listener_error": "no listener",
     "not_connected_error": "not connected",
     "connection_was_closed_error": "connection was closed",
+    "service_unknown_to_listener_error": (
+        "listener does not currently know of service requested in connect descriptor"
+    ),
 }

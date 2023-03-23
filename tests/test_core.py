@@ -95,6 +95,12 @@ async def handle_db_errors_close_pool_and_fail_test_func(error_msg):
         ("foo no listener moo",),
         ("foo not connected moo",),
         ("foo connection was closed moo",),
+        (
+            (
+                "foo listener does not currently know of service requested in connect "
+                "descriptor moo"
+            ),
+        ),
     ],
 )
 @patch("fastapi_oracle.core.close_db_pools")
