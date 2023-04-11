@@ -3,7 +3,7 @@ from functools import wraps
 from re import Pattern
 from typing import AsyncGenerator, Awaitable, Callable, ParamSpec, TypeVar
 
-from cx_Oracle import DatabaseError
+from cx_Oracle import DatabaseError, makedsn
 from cx_Oracle_async import create_pool
 from cx_Oracle_async.pools import AsyncPoolWrapper
 from fastapi import Depends
@@ -82,16 +82,20 @@ async def get_or_create_db_pool(
         else:
             return pool
 
-    pool = await create_pool(
+    dsn = makedsn(
         host=settings.db_host,
-        port=f"{settings.db_port}",
+        port=settings.db_port,
+        sid=settings.db_service_name,
+    )
+    pool = await create_pool(
         user=settings.db_user,
         password=settings.db_password,
-        service_name=settings.db_service_name,
+        dsn=dsn,
     )
     pools.DB_POOLS[pool_key] = DbPoolAndCreatedTime(
         pool=pool, created_time=time.monotonic()
     )
+
     return pools.DB_POOLS[pool_key].pool
 
 
