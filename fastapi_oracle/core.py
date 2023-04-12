@@ -138,6 +138,18 @@ async def get_db_conn(
                 "this case, therefore suppressing this error, so that consuming code "
                 "can continue gracefully"
             )
+        elif "timed out waiting for pool to create new connections" in f"{ex}":
+            logger.warning(
+                '"timed out waiting for pool to create new connections" was raised, '
+                "when attempting to acquire a connection, assuming that this is "
+                "because there is too high a load for the pool to be able to handle at "
+                "this time, therefore raising an intermittent database error, the call "
+                "will have to be retried later"
+            )
+            raise IntermittentDatabaseError(
+                "An intermittent database error occurred, please try this call again "
+                "soon"
+            )
         else:
             raise ex
 
