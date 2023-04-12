@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     db_password: str = "dbpassword"  # nosemgrep
     db_service_name: str = "dbservicename"
     db_conn_ttl: int | None = None
+    db_wait_timeout_secs: int | None = None
 
 
 @lru_cache()
