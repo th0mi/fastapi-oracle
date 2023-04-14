@@ -3,6 +3,7 @@ from typing import Any, AsyncGenerator, Generator
 
 from cx_Oracle import Object
 from cx_Oracle_async.cursors import AsyncCursorWrapper
+from loguru import logger
 
 from fastapi_oracle.constants import DEFAULT_MAX_ROWS
 
@@ -24,7 +25,14 @@ async def cursor_rows_as_gen(
     """Loop through the specified cursor's results in a generator."""
     i = 0
 
-    while (row := await cursor.fetchone()) is not None and i < max_rows:
+    while (row := await cursor.fetchone()) is not None:
+        if i >= max_rows:
+            logger.warning(
+                "Max rows exceeded while looping through cursor results "
+                f"(max_rows={max_rows})"
+            )
+            break
+
         yield row
         i += 1
 

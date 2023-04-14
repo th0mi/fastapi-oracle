@@ -29,7 +29,7 @@ class DbPoolAndCreatedTime(NamedTuple):
     created_time: float
 
 
-DEFAULT_MAX_ROWS = 1000
+DEFAULT_MAX_ROWS = 10_000
 
 # Thanks to: https://stackoverflow.com/a/1176023/2066849
 CAMEL_TO_SNAKE_REGEX = re.compile(r"(?<!^)(?=[A-Z])")
