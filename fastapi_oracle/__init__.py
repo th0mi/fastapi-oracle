@@ -22,6 +22,7 @@ from .errors import (
     IntermittentDatabaseError,
     PackageStateInvalidatedError,
     ProgramUnitNotFoundError,
+    RecordAttributeCharacterEncodingError,
 )
 from .utils import (
     coll_records_as_dicts,
@@ -44,6 +45,7 @@ __all__ = [
     "IntermittentDatabaseError",
     "PackageStateInvalidatedError",
     "ProgramUnitNotFoundError",
+    "RecordAttributeCharacterEncodingError",
     "Settings",
     "close_db_pools",
     "coll_records_as_dicts",
