@@ -48,15 +48,11 @@ def coll_records_as_dicts(coll: Object) -> Generator[dict[str, Any], None, None]
 
             try:
                 attr_value = getattr(record, type_attr.name, None)
-            except UnicodeDecodeError as ex1:
-                try:
-                    attr_value = ex1.object.decode("windows-1252")
-                except UnicodeDecodeError as ex2:
-                    raise RecordAttributeCharacterEncodingError(
-                        "Character encoding error in record attribute, tried decoding "
-                        "first to utf-8, then to windows-1252, both failed, error: "
-                        f"{ex2}, attribute: {attr_name}, value: {ex2.object!r}"
-                    )
+            except UnicodeDecodeError as ex:
+                raise RecordAttributeCharacterEncodingError(
+                    "Character encoding error in record attribute, decoding to utf-8 "
+                    f"failed, error: {ex}, attribute: {attr_name}, value: {ex.object!r}"
+                )
 
             item[f"{attr_name}"] = attr_value
 

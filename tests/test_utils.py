@@ -91,24 +91,9 @@ class DodgyTestRecord:
 
 @pytest.mark.pureunit
 def test_coll_records_as_dicts_with_dodgy_windows_1252_encoding():
-    value = "SEÑOR SMITH"
-    record1 = DodgyTestRecord(value.encode("windows-1252"))
-    type_attr1 = MagicMock()
-    type_attr1.name = "dodgy_field"
-    coll = MagicMock()
-    coll.aslist.return_value = [record1]
-    coll.type.element_type.attributes = [type_attr1]
-
-    dicts = [x for x in coll_records_as_dicts(coll)]
-
-    assert dicts[0]["dodgy_field"] == value
-
-
-@pytest.mark.pureunit
-def test_coll_records_as_dicts_with_totally_dodgy_encoding():
-    value = b"what\x9dthe"
-    record1 = DodgyTestRecord(value)
+    value = "SEÑOR SMITH".encode("windows-1252")
     attr_name = "dodgy_field"
+    record1 = DodgyTestRecord(value)
     type_attr1 = MagicMock()
     type_attr1.name = attr_name
     coll = MagicMock()
@@ -119,10 +104,9 @@ def test_coll_records_as_dicts_with_totally_dodgy_encoding():
         [x for x in coll_records_as_dicts(coll)]
 
     assert str(exc_info.value) == (
-        "Character encoding error in record attribute, tried decoding first to utf-8, "
-        "then to windows-1252, both failed, error: 'charmap' codec can't decode byte "
-        f"0x9d in position 4: character maps to <undefined>, attribute: {attr_name}, "
-        f"value: {value!r}"
+        "Character encoding error in record attribute, decoding to utf-8 failed, "
+        "error: 'utf-8' codec can't decode byte 0xd1 in position 2: invalid "
+        f"continuation byte, attribute: {attr_name}, value: {value!r}"
     )
 
 
