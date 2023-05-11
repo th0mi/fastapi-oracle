@@ -22,6 +22,7 @@ Helpers for using the [`cx_Oracle_async`](https://github.com/GoodManWEN/cx_Oracl
 6. Use the utils:
    ```python
    from collections.abc import AsyncIterable, Mapping
+   from contextlib import asynccontextmanager
    from typing import Any, AsyncGenerator
 
    from fastapi import APIRouter, Depends, FastAPI, Request, status
@@ -101,8 +102,14 @@ Helpers for using the [`cx_Oracle_async`](https://github.com/GoodManWEN/cx_Oracl
 
    def get_app() -> FastAPI:
        """Create a FastAPI app instance."""
+       @asynccontextmanager
+       async def lifespan(app: FastAPI):
+           yield
+
+           await close_db_pools()
+
        app = FastAPI(
-           on_shutdown=[close_db_pools],
+           lifespan=lifespan,
            exception_handlers={
                IntermittentDatabaseError: intermittent_database_error_handler,
            },

@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from typing import Generator
 from unittest.mock import AsyncMock
 
@@ -10,7 +11,13 @@ from fastapi_oracle import DbPoolConnAndCursor, close_db_pools, get_db_cursor
 
 @pytest.fixture(scope="session")
 def app() -> Generator:
-    _app = FastAPI(on_shutdown=[close_db_pools])
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        yield
+
+        await close_db_pools()
+
+    _app = FastAPI(lifespan=lifespan)
 
     @_app.get("/")
     async def db_test_route(db: DbPoolConnAndCursor = Depends(get_db_cursor)):
