@@ -6,7 +6,10 @@ from cx_Oracle_async.cursors import AsyncCursorWrapper
 from loguru import logger
 
 from fastapi_oracle.constants import DEFAULT_MAX_ROWS
-from fastapi_oracle.errors import RecordAttributeCharacterEncodingError
+from fastapi_oracle.errors import (
+    CursorRecordCharacterEncodingError,
+    RecordAttributeCharacterEncodingError,
+)
 
 
 def cursor_rows_as_dicts(cursor: AsyncCursorWrapper):
@@ -20,13 +23,23 @@ def cursor_rows_as_dicts(cursor: AsyncCursorWrapper):
     cursor._cursor.rowfactory = lambda *args: dict(zip(columns, args))
 
 
+async def _fetch_cursor_record(cursor: AsyncCursorWrapper) -> Any:
+    try:
+        return await cursor.fetchone()
+    except UnicodeDecodeError as ex:
+        raise CursorRecordCharacterEncodingError(
+            "Character encoding error in cursor record, decoding to utf-8 failed, "
+            f"error: {ex}, value: {ex.object!r}"
+        )
+
+
 async def cursor_rows_as_gen(
     cursor: AsyncCursorWrapper, max_rows: int = DEFAULT_MAX_ROWS
 ) -> AsyncGenerator[Any, None]:
     """Loop through the specified cursor's results in a generator."""
     i = 0
 
-    while (row := await cursor.fetchone()) is not None:
+    while (row := await _fetch_cursor_record(cursor)) is not None:
         if i >= max_rows:
             logger.warning(
                 "Max rows exceeded while looping through cursor results "

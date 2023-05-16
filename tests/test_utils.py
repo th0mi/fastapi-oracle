@@ -2,7 +2,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from fastapi_oracle.errors import RecordAttributeCharacterEncodingError
+from fastapi_oracle.errors import (
+    CursorRecordCharacterEncodingError,
+    RecordAttributeCharacterEncodingError,
+)
 from fastapi_oracle.utils import (
     coll_records_as_dicts,
     cursor_rows_as_dicts,
@@ -48,6 +51,23 @@ async def test_cursor_rows_as_gen_more_than_max_rows():
     cursor.fetchone.side_effect = things_to_fetch
     result = [row async for row in cursor_rows_as_gen(cursor, max_rows=max_rows)]
     assert result == things_to_fetch[:max_rows]
+
+
+@pytest.mark.asyncio
+@pytest.mark.pureunit
+async def test_cursor_rows_as_gen_with_dodgy_windows_1252_encoding():
+    value = "SEÑOR SMITH".encode("windows-1252")
+    cursor = AsyncMock()
+    cursor.fetchone.side_effect = lambda: value.decode("utf-8")
+
+    with pytest.raises(CursorRecordCharacterEncodingError) as exc_info:
+        [row async for row in cursor_rows_as_gen(cursor)]
+
+    assert str(exc_info.value) == (
+        "Character encoding error in cursor record, decoding to utf-8 failed, "
+        "error: 'utf-8' codec can't decode byte 0xd1 in position 2: invalid "
+        "continuation byte, value: b'SE\\xd1OR SMITH'"
+    )
 
 
 @pytest.mark.pureunit
@@ -106,7 +126,7 @@ def test_coll_records_as_dicts_with_dodgy_windows_1252_encoding():
     assert str(exc_info.value) == (
         "Character encoding error in record attribute, decoding to utf-8 failed, "
         "error: 'utf-8' codec can't decode byte 0xd1 in position 2: invalid "
-        f"continuation byte, attribute: {attr_name}, value: {value!r}"
+        "continuation byte, attribute: dodgy_field, value: b'SE\\xd1OR SMITH'"
     )
 
 

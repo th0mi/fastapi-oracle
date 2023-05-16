@@ -3,7 +3,7 @@ from functools import wraps
 from re import Pattern
 from typing import AsyncGenerator, Awaitable, Callable, ParamSpec, TypeVar
 
-from cx_Oracle import SPOOL_ATTRVAL_TIMEDWAIT, DatabaseError, makedsn
+from cx_Oracle import DB_TYPE_VARCHAR, SPOOL_ATTRVAL_TIMEDWAIT, DatabaseError, makedsn
 from cx_Oracle_async import create_pool
 from cx_Oracle_async.pools import AsyncPoolWrapper
 from fastapi import Depends
@@ -108,7 +108,7 @@ async def get_or_create_db_pool(
 
 async def get_db_pool(
     settings: Settings = Depends(get_settings),
-) -> AsyncPoolWrapper:  # pragma: no cover
+) -> tuple[AsyncPoolWrapper, Settings]:  # pragma: no cover
     """Get the DB connection pool.
 
     Creates a new singleton connection pool if one doesn't yet exist, otherwise returns
@@ -116,18 +116,35 @@ async def get_db_pool(
 
     Suitable for use as a FastAPI path operation with depends().
     """
-    return await get_or_create_db_pool(settings)
+    return (await get_or_create_db_pool(settings), settings)
 
 
 async def get_db_conn(
-    pool: AsyncPoolWrapper = Depends(get_db_pool),
+    pool_and_settings: tuple[AsyncPoolWrapper, Settings] = Depends(get_db_pool),
 ) -> AsyncGenerator[DbPoolAndConn, None]:  # pragma: no cover
     """Get a DB connection.
 
     Suitable for use as a FastAPI path operation with depends().
     """
+    pool, settings = pool_and_settings
+
     try:
         async with pool.acquire() as conn:
+            if settings.db_encoding_error_handler_name is not None:
+
+                def output_type_handler(
+                    cursor, name, default_type, size, precision, scale
+                ):
+                    if default_type == DB_TYPE_VARCHAR:
+                        return cursor.var(
+                            default_type,
+                            size,
+                            arraysize=cursor.arraysize,
+                            encoding_errors=settings.db_encoding_error_handler_name,
+                        )
+
+                conn._conn.outputtypehandler = output_type_handler
+
             yield DbPoolAndConn(pool=pool, conn=conn)
     except DatabaseError as ex:
         if "not connected" in f"{ex}":

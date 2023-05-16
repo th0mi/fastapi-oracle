@@ -20,6 +20,10 @@ class RecordAttributeCharacterEncodingError(Exception):
     """Character encoding error in record attribute."""
 
 
+class CursorRecordCharacterEncodingError(Exception):
+    """Character encoding error in cursor record."""
+
+
 # This list acts as a registry. Anything that wants more error classes treated as
 # intermittent database errors, adds to this list on app startup. So the entries that
 # are literally defined here, should only be considered the base set of entries, not the

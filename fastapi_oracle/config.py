@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     db_service_name: str = "dbservicename"
     db_conn_ttl: int | None = None
     db_wait_timeout_secs: int | None = None
+    db_encoding_error_handler_name: str | None = None
 
 
 @lru_cache()
