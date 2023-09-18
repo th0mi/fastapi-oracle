@@ -1,11 +1,12 @@
 from collections.abc import AsyncIterable, Mapping
+from functools import partial
 from typing import Any, AsyncGenerator, Generator
 
 from cx_Oracle import Object
 from cx_Oracle_async.cursors import AsyncCursorWrapper
 from loguru import logger
 
-from fastapi_oracle.constants import DEFAULT_MAX_ROWS
+from fastapi_oracle.constants import DEFAULT_MAX_ROWS, DbPoolConnAndCursor
 from fastapi_oracle.errors import (
     CursorRecordCharacterEncodingError,
     RecordAttributeCharacterEncodingError,
@@ -83,3 +84,31 @@ async def result_keys_to_lower(
     """Make the keys lowercase for each row in the specified results."""
     async for row in result:
         yield row_keys_to_lower(row)
+
+
+async def callproc(
+    db: DbPoolConnAndCursor,
+    name: str,
+    parameters: list[Any] | None = None,
+    keyword_parameters: dict[str, Any] | None = None,
+):  # pragma: no cover
+    """Wrapper around db.cursor._cursor.callproc.
+
+    Wouldn't be needed if this fix ever went in upstream:
+    https://github.com/GoodManWEN/cx_Oracle_async/pull/21
+    """
+    callproc_kwargs: dict[str, Any] = {}
+
+    if parameters is not None:
+        callproc_kwargs["parameters"] = parameters
+    if keyword_parameters is not None:
+        callproc_kwargs["keyword_parameters"] = keyword_parameters
+
+    return await db.cursor._loop.run_in_executor(
+        db.cursor._thread_pool,
+        partial(
+            db.cursor._cursor.callproc,
+            name,
+            **callproc_kwargs,
+        ),
+    )
