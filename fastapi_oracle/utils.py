@@ -91,7 +91,7 @@ async def callproc(
     name: str,
     parameters: list[Any] | None = None,
     keyword_parameters: dict[str, Any] | None = None,
-):  # pragma: no cover
+) -> Any:  # pragma: no cover
     """Wrapper around db.cursor._cursor.callproc.
 
     Wouldn't be needed if this fix ever went in upstream:
@@ -110,5 +110,31 @@ async def callproc(
             db.cursor._cursor.callproc,
             name,
             **callproc_kwargs,
+        ),
+    )
+
+
+async def callfunc(
+    db: DbPoolConnAndCursor,
+    name: str,
+    return_type: Any,
+    parameters: list[Any] | None = None,
+    keyword_parameters: dict[str, Any] | None = None,
+) -> Any:  # pragma: no cover
+    """Wrapper around db.cursor._cursor.callfunc."""
+    callfunc_kwargs: dict[str, Any] = {}
+
+    if parameters is not None:
+        callfunc_kwargs["parameters"] = parameters
+    if keyword_parameters is not None:
+        callfunc_kwargs["keyword_parameters"] = keyword_parameters
+
+    return await db.cursor._loop.run_in_executor(
+        db.cursor._thread_pool,
+        partial(
+            db.cursor._cursor.callfunc,
+            name,
+            return_type,
+            **callfunc_kwargs,
         ),
     )

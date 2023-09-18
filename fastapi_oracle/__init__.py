@@ -25,6 +25,7 @@ from .errors import (
     RecordAttributeCharacterEncodingError,
 )
 from .utils import (
+    callfunc,
     callproc,
     coll_records_as_dicts,
     cursor_rows_as_dicts,
@@ -48,6 +49,7 @@ __all__ = [
     "ProgramUnitNotFoundError",
     "RecordAttributeCharacterEncodingError",
     "Settings",
+    "callfunc",
     "callproc",
     "close_db_pools",
     "coll_records_as_dicts",
