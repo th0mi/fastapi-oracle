@@ -93,6 +93,13 @@ async def get_or_create_db_pool(
         create_pool_kwargs["getmode"] = SPOOL_ATTRVAL_TIMEDWAIT
         create_pool_kwargs["waitTimeout"] = settings.db_wait_timeout_secs * 1000
 
+    if settings.db_pool_min_size is not None:
+        create_pool_kwargs["min"] = settings.db_pool_min_size
+    if settings.db_pool_max_size is not None:
+        create_pool_kwargs["max"] = settings.db_pool_max_size
+    if settings.db_pool_increment is not None:
+        create_pool_kwargs["increment"] = settings.db_pool_increment
+
     pool = await create_pool(
         user=settings.db_user,
         password=settings.db_password,
