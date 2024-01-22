@@ -1,25 +1,24 @@
 # fastapi-oracle
 
-Helpers for using the [`cx_Oracle_async`](https://github.com/GoodManWEN/cx_Oracle_async) library with the [FastAPI](https://github.com/tiangolo/fastapi) framework.
+Helpers for using the [`python-oracledb`](https://github.com/oracle/python-oracledb) library with the [FastAPI](https://github.com/tiangolo/fastapi) framework.
 
 
 ## Getting started
 
 1. Install a recent Python 3.x version (if you don't already have one).
-2. Install the Oracle client libraries (if you don't already have them), they are available for most systems on the official [Oracle Instant Client Downloads](https://www.oracle.com/database/technologies/instant-client/downloads.html) page.
-3. Create a project that uses `cx_Oracle_async` and FastAPI (if you don't already have one).
-4. Install `fastapi-oracle` as a dependency using [Poetry](https://python-poetry.org/), pip, or similar:
+2. Create a project that uses `python-oracledb` and FastAPI (if you don't already have one).
+3. Install `fastapi-oracle` as a dependency using [Poetry](https://python-poetry.org/), pip, or similar:
    ```sh
    poetry add fastapi-oracle
    ```
-5. Set DB config in environment variables:
+4. Set DB config in environment variables:
    ```sh
    DB_HOST=foodbhost.aintitfootastic.com
    DB_PORT=1521
    DB_USER=foouser
    DB_PASSWORD=foopass
    DB_SERVICE_NAME=foodb1.aintitfootastic.com
-6. Use the utils:
+5. Use the utils:
    ```python
    from collections.abc import AsyncIterable, Mapping
    from contextlib import asynccontextmanager
