@@ -3,11 +3,16 @@ from functools import wraps
 from re import Pattern
 from typing import AsyncGenerator, Awaitable, Callable, ParamSpec, TypeVar
 
-from cx_Oracle import DB_TYPE_VARCHAR, SPOOL_ATTRVAL_TIMEDWAIT, DatabaseError, makedsn
-from cx_Oracle_async import create_pool
-from cx_Oracle_async.pools import AsyncPoolWrapper
 from fastapi import Depends
 from loguru import logger
+from oracledb import (
+    DB_TYPE_VARCHAR,
+    SPOOL_ATTRVAL_TIMEDWAIT,
+    AsyncConnectionPool,
+    DatabaseError,
+    create_pool_async,
+    makedsn,
+)
 
 from fastapi_oracle import pools
 from fastapi_oracle.config import Settings, get_settings
@@ -15,7 +20,6 @@ from fastapi_oracle.constants import (
     CAMEL_TO_SNAKE_REGEX,
     DbPoolAndConn,
     DbPoolAndCreatedTime,
-    DbPoolConnAndCursor,
     DbPoolKey,
 )
 from fastapi_oracle.errors import IntermittentDatabaseError
@@ -25,7 +29,7 @@ P = ParamSpec("P")
 T = TypeVar("T")
 
 
-async def close_db_pool(pool: AsyncPoolWrapper):  # pragma: no cover
+async def close_db_pool(pool: AsyncConnectionPool):  # pragma: no cover
     """Close the DB connection pool."""
     try:
         await pool.close()
@@ -60,7 +64,7 @@ async def close_db_pool(pool: AsyncPoolWrapper):  # pragma: no cover
 
 async def get_or_create_db_pool(
     settings: Settings,
-) -> AsyncPoolWrapper:  # pragma: no cover
+) -> AsyncConnectionPool:  # pragma: no cover
     """Get or create the DB connection pool."""
     pool_key = DbPoolKey(
         settings.db_host,
@@ -91,7 +95,7 @@ async def get_or_create_db_pool(
 
     if settings.db_wait_timeout_secs is not None:
         create_pool_kwargs["getmode"] = SPOOL_ATTRVAL_TIMEDWAIT
-        create_pool_kwargs["waitTimeout"] = settings.db_wait_timeout_secs * 1000
+        create_pool_kwargs["wait_timeout"] = settings.db_wait_timeout_secs * 1000
 
     if settings.db_pool_min_size is not None:
         create_pool_kwargs["min"] = settings.db_pool_min_size
@@ -100,7 +104,7 @@ async def get_or_create_db_pool(
     if settings.db_pool_increment is not None:
         create_pool_kwargs["increment"] = settings.db_pool_increment
 
-    pool = await create_pool(
+    pool = create_pool_async(
         user=settings.db_user,
         password=settings.db_password,
         dsn=dsn,
@@ -115,7 +119,7 @@ async def get_or_create_db_pool(
 
 async def get_db_pool(
     settings: Settings = Depends(get_settings),
-) -> tuple[AsyncPoolWrapper, Settings]:  # pragma: no cover
+) -> tuple[AsyncConnectionPool, Settings]:  # pragma: no cover
     """Get the DB connection pool.
 
     Creates a new singleton connection pool if one doesn't yet exist, otherwise returns
@@ -127,7 +131,7 @@ async def get_db_pool(
 
 
 async def get_db_conn(
-    pool_and_settings: tuple[AsyncPoolWrapper, Settings] = Depends(get_db_pool),
+    pool_and_settings: tuple[AsyncConnectionPool, Settings] = Depends(get_db_pool),
 ) -> AsyncGenerator[DbPoolAndConn, None]:  # pragma: no cover
     """Get a DB connection.
 
@@ -136,7 +140,7 @@ async def get_db_conn(
     pool, settings = pool_and_settings
 
     try:
-        async with pool.acquire() as conn:
+        async with pool.acquire() as conn:  # type: ignore
             if settings.db_encoding_error_handler_name is not None:
 
                 def output_type_handler(
@@ -176,21 +180,6 @@ async def get_db_conn(
             )
         else:
             raise ex
-
-
-async def get_db_cursor(
-    pool_and_conn: DbPoolAndConn = Depends(get_db_conn),
-) -> AsyncGenerator[DbPoolConnAndCursor, None]:  # pragma: no cover
-    """Get a DB cursor.
-
-    Suitable for use as a FastAPI path operation with depends().
-
-    This is more convenient to use than get_db_pool() or get_db_conn(), it calls those
-    for you, so you can without further ado get a cursor ready to chuck a query at.
-    """
-    pool, conn = pool_and_conn
-    async with conn.cursor() as cursor:
-        yield DbPoolConnAndCursor(pool=pool, conn=conn, cursor=cursor)
 
 
 async def close_db_pools():  # pragma: no cover

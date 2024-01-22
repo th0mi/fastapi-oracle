@@ -2,8 +2,8 @@ from http import HTTPStatus
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from cx_Oracle import DatabaseError
 from fastapi.testclient import TestClient
+from oracledb import DatabaseError
 
 from fastapi_oracle.core import handle_db_errors
 from fastapi_oracle.errors import (
@@ -15,7 +15,7 @@ from fastapi_oracle.errors import (
 
 @pytest.mark.pureunit
 def test_endpoint(client: TestClient, db: AsyncMock):
-    db.cursor.fetchall.return_value = [[42]]
+    db.conn.fetchone.return_value = [42]
     response = client.get("/")
     assert response.status_code == HTTPStatus.OK.value
     data = response.json()

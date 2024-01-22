@@ -1,20 +1,12 @@
 import re
 from typing import NamedTuple
 
-from cx_Oracle_async.connections import AsyncConnectionWrapper
-from cx_Oracle_async.cursors import AsyncCursorWrapper
-from cx_Oracle_async.pools import AsyncPoolWrapper
+from oracledb import AsyncConnection, AsyncConnectionPool
 
 
 class DbPoolAndConn(NamedTuple):
-    pool: AsyncPoolWrapper
-    conn: AsyncConnectionWrapper
-
-
-class DbPoolConnAndCursor(NamedTuple):
-    pool: AsyncPoolWrapper
-    conn: AsyncConnectionWrapper
-    cursor: AsyncCursorWrapper
+    pool: AsyncConnectionPool
+    conn: AsyncConnection
 
 
 class DbPoolKey(NamedTuple):
@@ -25,7 +17,7 @@ class DbPoolKey(NamedTuple):
 
 
 class DbPoolAndCreatedTime(NamedTuple):
-    pool: AsyncPoolWrapper
+    pool: AsyncConnectionPool
     created_time: float
 
 

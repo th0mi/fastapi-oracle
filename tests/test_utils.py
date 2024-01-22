@@ -17,9 +17,9 @@ from fastapi_oracle.utils import (
 @pytest.mark.pureunit
 def test_cursor_rows_as_dicts():
     cursor = MagicMock()
-    cursor._cursor.description = [["do"], ["re"], ["mi"]]
+    cursor.description = [["do"], ["re"], ["mi"]]
     cursor_rows_as_dicts(cursor)
-    row_as_dict = cursor._cursor.rowfactory(111, 222, 333)
+    row_as_dict = cursor.rowfactory(111, 222, 333)
     assert row_as_dict == {"do": 111, "re": 222, "mi": 333}
 
 

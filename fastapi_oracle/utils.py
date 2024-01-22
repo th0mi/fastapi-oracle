@@ -1,30 +1,28 @@
 from collections.abc import AsyncIterable, Mapping
-from functools import partial
 from typing import Any, AsyncGenerator, Generator
 
-from cx_Oracle import Object
-from cx_Oracle_async.cursors import AsyncCursorWrapper
 from loguru import logger
+from oracledb import AsyncCursor, DbObject
 
-from fastapi_oracle.constants import DEFAULT_MAX_ROWS, DbPoolConnAndCursor
+from fastapi_oracle.constants import DEFAULT_MAX_ROWS
 from fastapi_oracle.errors import (
     CursorRecordCharacterEncodingError,
     RecordAttributeCharacterEncodingError,
 )
 
 
-def cursor_rows_as_dicts(cursor: AsyncCursorWrapper):
+def cursor_rows_as_dicts(cursor: AsyncCursor):
     """Make the specified cursor return its rows as dicts instead of tuples.
 
     This should be called after cursor.execute() and before cursor.fetchall().
 
     Thanks to: https://github.com/oracle/python-cx_Oracle/blob/main/samples/query.py
     """
-    columns = [col[0] for col in cursor._cursor.description]
-    cursor._cursor.rowfactory = lambda *args: dict(zip(columns, args))
+    columns = [col[0] for col in cursor.description]
+    cursor.rowfactory = lambda *args: dict(zip(columns, args))
 
 
-async def _fetch_cursor_record(cursor: AsyncCursorWrapper) -> Any:
+async def _fetch_cursor_record(cursor: AsyncCursor) -> Any:
     try:
         return await cursor.fetchone()
     except UnicodeDecodeError as ex:
@@ -35,7 +33,7 @@ async def _fetch_cursor_record(cursor: AsyncCursorWrapper) -> Any:
 
 
 async def cursor_rows_as_gen(
-    cursor: AsyncCursorWrapper, max_rows: int = DEFAULT_MAX_ROWS
+    cursor: AsyncCursor, max_rows: int = DEFAULT_MAX_ROWS
 ) -> AsyncGenerator[Any, None]:
     """Loop through the specified cursor's results in a generator."""
     i = 0
@@ -52,7 +50,7 @@ async def cursor_rows_as_gen(
         i += 1
 
 
-def coll_records_as_dicts(coll: Object) -> Generator[dict[str, Any], None, None]:
+def coll_records_as_dicts(coll: DbObject) -> Generator[dict[str, Any], None, None]:
     """Make the specified collection of records into simple dicts."""
     for record in coll.aslist():
         item: dict[str, Any] = {}
@@ -84,57 +82,3 @@ async def result_keys_to_lower(
     """Make the keys lowercase for each row in the specified results."""
     async for row in result:
         yield row_keys_to_lower(row)
-
-
-async def callproc(
-    db: DbPoolConnAndCursor,
-    name: str,
-    parameters: list[Any] | None = None,
-    keyword_parameters: dict[str, Any] | None = None,
-) -> Any:  # pragma: no cover
-    """Wrapper around db.cursor._cursor.callproc.
-
-    Wouldn't be needed if this fix ever went in upstream:
-    https://github.com/GoodManWEN/cx_Oracle_async/pull/21
-    """
-    callproc_kwargs: dict[str, Any] = {}
-
-    if parameters is not None:
-        callproc_kwargs["parameters"] = parameters
-    if keyword_parameters is not None:
-        callproc_kwargs["keyword_parameters"] = keyword_parameters
-
-    return await db.cursor._loop.run_in_executor(
-        db.cursor._thread_pool,
-        partial(
-            db.cursor._cursor.callproc,
-            name,
-            **callproc_kwargs,
-        ),
-    )
-
-
-async def callfunc(
-    db: DbPoolConnAndCursor,
-    name: str,
-    return_type: Any,
-    parameters: list[Any] | None = None,
-    keyword_parameters: dict[str, Any] | None = None,
-) -> Any:  # pragma: no cover
-    """Wrapper around db.cursor._cursor.callfunc."""
-    callfunc_kwargs: dict[str, Any] = {}
-
-    if parameters is not None:
-        callfunc_kwargs["parameters"] = parameters
-    if keyword_parameters is not None:
-        callfunc_kwargs["keyword_parameters"] = keyword_parameters
-
-    return await db.cursor._loop.run_in_executor(
-        db.cursor._thread_pool,
-        partial(
-            db.cursor._cursor.callfunc,
-            name,
-            return_type,
-            **callfunc_kwargs,
-        ),
-    )

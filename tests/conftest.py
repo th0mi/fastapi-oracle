@@ -6,7 +6,7 @@ import pytest
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
-from fastapi_oracle import DbPoolConnAndCursor, close_db_pools, get_db_cursor
+from fastapi_oracle import DbPoolAndConn, close_db_pools, get_db_conn
 
 
 @pytest.fixture(scope="session")
@@ -20,10 +20,8 @@ def app() -> Generator:
     _app = FastAPI(lifespan=lifespan)
 
     @_app.get("/")
-    async def db_test_route(db: DbPoolConnAndCursor = Depends(get_db_cursor)):
-        await db.cursor.execute("SELECT 1 FROM dual")
-        result = await db.cursor.fetchall()
-        return [x for x in result][0]
+    async def db_test_route(db: DbPoolAndConn = Depends(get_db_conn)):
+        return await db.conn.fetchone("SELECT 1 FROM dual")
 
     yield _app
 
@@ -37,6 +35,6 @@ def client(app: FastAPI) -> Generator:
 @pytest.fixture
 def db(app: FastAPI) -> Generator:
     _db = AsyncMock()
-    app.dependency_overrides[get_db_cursor] = lambda: _db
+    app.dependency_overrides[get_db_conn] = lambda: _db
     yield _db
-    del app.dependency_overrides[get_db_cursor]
+    del app.dependency_overrides[get_db_conn]

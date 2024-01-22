@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fastapi-oracle"
-version = "0.14.0"
+version = "0.15.0"
 description = "Helpers for using the cx_Oracle_async library with the FastAPI framework."
 authors = ["Jeremy Epstein <jazepstein@gmail.com>"]
 homepage = "https://github.com/Jaza/fastapi-oracle"
@@ -11,8 +11,8 @@ packages = [{include = "fastapi_oracle"}]
 [tool.poetry.dependencies]
 python = ">=3.10,<4"
 fastapi = "*"
-pydantic = {extras = ["dotenv"], version = "*"}
-cx-Oracle-async = "*"
+pydantic = {extras = ["dotenv"], version = "<2"}
+oracledb = "*"
 loguru = "*"
 
 
@@ -24,10 +24,11 @@ mypy = "*"
 isort = "*"
 pytest-cov = "*"
 autoflake = "*"
+ipython = "*"
 requests = "*"
 bandit = {extras = ["toml"], version = "*"}
 pytest-asyncio = "*"
-httpx = "^0.23.3"
+httpx = "*"
 
 [tool.mypy]
 ignore_missing_imports = true
