@@ -155,7 +155,7 @@ async def get_db_conn(
                             encoding_errors=settings.db_encoding_error_handler_name,
                         )
 
-                conn._conn.outputtypehandler = output_type_handler
+                conn.outputtypehandler = output_type_handler
 
             yield DbPoolAndConn(pool=pool, conn=conn)
     except DatabaseError as ex:
