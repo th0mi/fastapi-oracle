@@ -1,12 +1,18 @@
 import re
 from typing import NamedTuple
 
-from oracledb import AsyncConnection, AsyncConnectionPool
+from oracledb import AsyncConnection, AsyncConnectionPool, AsyncCursor
 
 
 class DbPoolAndConn(NamedTuple):
     pool: AsyncConnectionPool
     conn: AsyncConnection
+
+
+class DbPoolConnAndCursor(NamedTuple):
+    pool: AsyncConnectionPool
+    conn: AsyncConnection
+    cursor: AsyncCursor
 
 
 class DbPoolKey(NamedTuple):

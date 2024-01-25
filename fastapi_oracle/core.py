@@ -20,6 +20,7 @@ from fastapi_oracle.constants import (
     CAMEL_TO_SNAKE_REGEX,
     DbPoolAndConn,
     DbPoolAndCreatedTime,
+    DbPoolConnAndCursor,
     DbPoolKey,
 )
 from fastapi_oracle.errors import IntermittentDatabaseError
@@ -166,20 +167,23 @@ async def get_db_conn(
                 "this case, therefore suppressing this error, so that consuming code "
                 "can continue gracefully"
             )
-        elif "timed out waiting for pool to create new connections" in f"{ex}":
-            logger.warning(
-                '"timed out waiting for pool to create new connections" was raised, '
-                "when attempting to acquire a connection, assuming that this is "
-                "because there is too high a load for the pool to be able to handle at "
-                "this time, therefore raising an intermittent database error, the call "
-                "will have to be retried later"
-            )
-            raise IntermittentDatabaseError(
-                "An intermittent database error occurred, please try this call again "
-                "soon"
-            )
         else:
             raise ex
+
+
+async def get_db_cursor(
+    pool_and_conn: DbPoolAndConn = Depends(get_db_conn),
+) -> AsyncGenerator[DbPoolConnAndCursor, None]:  # pragma: no cover
+    """Get a DB cursor.
+
+    Suitable for use as a FastAPI path operation with depends().
+
+    This is more convenient to use than get_db_pool() or get_db_conn(), it calls those
+    for you, so you can without further ado get a cursor ready to chuck a query at.
+    """
+    pool, conn = pool_and_conn
+    async with conn.cursor() as cursor:
+        yield DbPoolConnAndCursor(pool=pool, conn=conn, cursor=cursor)
 
 
 async def close_db_pools():  # pragma: no cover
