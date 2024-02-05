@@ -10,6 +10,7 @@ from oracledb import (
     SPOOL_ATTRVAL_TIMEDWAIT,
     AsyncConnectionPool,
     DatabaseError,
+    InterfaceError,
     create_pool_async,
     makedsn,
 )
@@ -34,7 +35,7 @@ async def close_db_pool(pool: AsyncConnectionPool):  # pragma: no cover
     """Close the DB connection pool."""
     try:
         await pool.close()
-    except DatabaseError as ex:
+    except (DatabaseError, InterfaceError) as ex:
         if "while trying to destroy the Session Pool" in f"{ex}":
             logger.warning(
                 '"error occurred while trying to destroy the Session Pool" '
@@ -58,6 +59,14 @@ async def close_db_pool(pool: AsyncConnectionPool):  # pragma: no cover
                 "has already been closed - assuming that that's what happened "
                 "in this case, therefore suppressing this error, so that "
                 "consuming code can continue gracefully"
+            )
+        elif "connection pool cannot be closed because connections are busy" in f"{ex}":
+            logger.warning(
+                '"connection pool cannot be closed because connections are busy" '
+                "was raised, when releasing the database connection pool - "
+                "this can happen when there are still busy connections - "
+                "suppressing this error, hopefully consuming code can then "
+                "continue gracefully"
             )
         else:
             raise ex
@@ -158,7 +167,7 @@ async def get_db_conn(
                 conn.outputtypehandler = output_type_handler
 
             yield DbPoolAndConn(pool=pool, conn=conn)
-    except DatabaseError as ex:
+    except (DatabaseError, RuntimeError) as ex:
         if "not connected" in f"{ex}":
             logger.warning(
                 '"not connected" was raised, either when acquiring or when releasing '
@@ -166,6 +175,14 @@ async def get_db_conn(
                 "pool has already been closed - assuming that that's what happened in "
                 "this case, therefore suppressing this error, so that consuming code "
                 "can continue gracefully"
+            )
+        elif "handler is closed" in f"{ex}":
+            logger.warning(
+                '"handler is closed" was raised, either when acquiring or when '
+                "releasing the database connection pool - this can happen on release "
+                "when the pool has already been closed - assuming that that's what "
+                "happened in this case, therefore suppressing this error, so that "
+                "consuming code can continue gracefully"
             )
         else:
             raise ex
