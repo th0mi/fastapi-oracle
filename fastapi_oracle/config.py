@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     db_pool_min_size: int | None = None
     db_pool_max_size: int | None = None
     db_pool_increment: int | None = None
+    db_pool_conn_timeout: int | None = None
     db_encoding_error_handler_name: str | None = None
 
 

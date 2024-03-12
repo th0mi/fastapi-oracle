@@ -113,6 +113,8 @@ async def get_or_create_db_pool(
         create_pool_kwargs["max"] = settings.db_pool_max_size
     if settings.db_pool_increment is not None:
         create_pool_kwargs["increment"] = settings.db_pool_increment
+    if settings.db_pool_conn_timeout is not None:
+        create_pool_kwargs["timeout"] = settings.db_pool_conn_timeout
 
     pool = create_pool_async(
         user=settings.db_user,
