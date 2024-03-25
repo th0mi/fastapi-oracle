@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     db_pool_increment: int | None = None
     db_pool_conn_timeout: int | None = None
     db_encoding_error_handler_name: str | None = None
+    db_call_timeout_secs: int | None = None
 
 
 @lru_cache()

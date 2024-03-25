@@ -168,6 +168,9 @@ async def get_db_conn(
 
                 conn.outputtypehandler = output_type_handler
 
+            if settings.db_call_timeout_secs:
+                conn.call_timeout = settings.db_call_timeout_secs * 1000
+
             yield DbPoolAndConn(pool=pool, conn=conn)
     except (DatabaseError, RuntimeError) as ex:
         if "not connected" in f"{ex}":
