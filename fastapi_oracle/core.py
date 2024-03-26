@@ -99,7 +99,7 @@ async def get_or_create_db_pool(
     dsn = makedsn(
         host=settings.db_host,
         port=settings.db_port,
-        sid=settings.db_service_name,
+        service_name=settings.db_service_name,
     )
     create_pool_kwargs = {}
 
