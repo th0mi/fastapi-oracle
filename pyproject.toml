@@ -11,7 +11,7 @@ packages = [{include = "fastapi_oracle"}]
 [tool.poetry.dependencies]
 python = ">=3.10,<4"
 fastapi = "*"
-pydantic = {extras = ["dotenv"], version = ">=2"}
+pydantic_settings = "*"
 oracledb = "*"
 loguru = "*"
 
